@@ -48,7 +48,11 @@ test("edits a todo and saves changes", () => {
   fireEvent.change(input, { target: { value: "Old text" } });
   fireEvent.click(screen.getByRole("button", { name: /add/i }));
 
-  fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+  // Find and click the Edit button (contains "Edit" text)
+  const editButtons = screen.getAllByRole("button").filter(
+    (btn) => btn.textContent.includes("Edit") && !btn.textContent.includes("Delete")
+  );
+  fireEvent.click(editButtons[0]);
 
   const editInput = screen.getByLabelText(/edit todo/i);
   fireEvent.change(editInput, { target: { value: "New text" } });
@@ -91,4 +95,28 @@ test("persists todos to localStorage after adding", () => {
 
   const parsed = JSON.parse(raw);
   expect(parsed.some((t) => t.text === "Persist me")).toBe(true);
+});
+
+test("shows toast notification when adding a todo", () => {
+  render(<App />);
+
+  const input = screen.getByLabelText(/add a todo/i);
+  fireEvent.change(input, { target: { value: "Toast test" } });
+  fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+  // Toast should appear with a success message
+  expect(screen.getByText(/task "toast test" added/i)).toBeInTheDocument();
+});
+
+test("shows toast notification when deleting a todo", () => {
+  render(<App />);
+
+  const input = screen.getByLabelText(/add a todo/i);
+  fireEvent.change(input, { target: { value: "Delete me" } });
+  fireEvent.click(screen.getByRole("button", { name: /add/i }));
+
+  fireEvent.click(screen.getByRole("button", { name: /delete "delete me"/i }));
+
+  // Toast should appear with a delete message
+  expect(screen.getByText(/\"delete me\" deleted/i)).toBeInTheDocument();
 });

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
+import ToastContainer from "./components/ToastContainer";
+import useToast from "./hooks/useToast";
 
 const STORAGE_KEY = "kavia.todos.v1";
 
@@ -57,7 +59,28 @@ function saveTodos(todos) {
   }
 }
 
+/**
+ * Format a timestamp into a human-readable relative time string.
+ * @param {number} timestamp
+ * @returns {string}
+ */
+function formatRelativeTime(timestamp) {
+  const diff = Date.now() - timestamp;
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 // PUBLIC_INTERFACE
+/**
+ * Main App component — renders the todo application with toast notifications,
+ * filtering, local persistence, and an enhanced UI.
+ */
 function App() {
   /** @type {[Todo[], Function]} */
   const [todos, setTodos] = useState(() => loadTodos());
@@ -68,6 +91,9 @@ function App() {
 
   const newInputRef = useRef(null);
   const editInputRef = useRef(null);
+
+  // Toast notification system
+  const { toasts, showToast, dismissToast } = useToast(3000);
 
   // Persist on every change
   useEffect(() => {
@@ -101,6 +127,10 @@ function App() {
   }, [todos, filter]);
 
   // PUBLIC_INTERFACE
+  /**
+   * Add a new todo item and show a success notification.
+   * @param {string} text - The todo text
+   */
   function addTodo(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -114,20 +144,45 @@ function App() {
 
     setTodos((prev) => [todo, ...prev]);
     setNewText("");
+    showToast(`Task "${trimmed}" added`, "success");
     // Keep focus on add input for fast entry
     newInputRef.current?.focus?.();
   }
 
   // PUBLIC_INTERFACE
+  /**
+   * Toggle the completion state of a todo and notify the user.
+   * @param {string} id
+   */
   function toggleTodo(id) {
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
+      prev.map((t) => {
+        if (t.id === id) {
+          const next = { ...t, completed: !t.completed };
+          showToast(
+            next.completed
+              ? `"${t.text}" marked complete`
+              : `"${t.text}" marked active`,
+            next.completed ? "success" : "info"
+          );
+          return next;
+        }
+        return t;
+      })
     );
   }
 
   // PUBLIC_INTERFACE
+  /**
+   * Delete a todo item and notify the user.
+   * @param {string} id
+   */
   function deleteTodo(id) {
+    const target = todos.find((t) => t.id === id);
     setTodos((prev) => prev.filter((t) => t.id !== id));
+    if (target) {
+      showToast(`"${target.text}" deleted`, "error");
+    }
     // If you delete the todo you're editing, exit edit mode
     if (editingId === id) {
       setEditingId(null);
@@ -136,18 +191,30 @@ function App() {
   }
 
   // PUBLIC_INTERFACE
+  /**
+   * Enter editing mode for a given todo.
+   * @param {Todo} todo
+   */
   function startEditing(todo) {
     setEditingId(todo.id);
     setEditingText(todo.text);
   }
 
   // PUBLIC_INTERFACE
+  /**
+   * Cancel editing and reset editing state.
+   */
   function cancelEditing() {
     setEditingId(null);
     setEditingText("");
   }
 
   // PUBLIC_INTERFACE
+  /**
+   * Save the edited text for a todo. Deletes if blank text is submitted.
+   * @param {string} id
+   * @param {string} nextText
+   */
   function saveEditing(id, nextText) {
     const trimmed = nextText.trim();
     if (!trimmed) {
@@ -157,8 +224,9 @@ function App() {
     }
 
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, text: trimmed } : t)),
+      prev.map((t) => (t.id === id ? { ...t, text: trimmed } : t))
     );
+    showToast("Task updated", "info");
     setEditingId(null);
     setEditingText("");
   }
@@ -174,17 +242,28 @@ function App() {
   }
 
   function clearCompleted() {
+    const count = todos.filter((t) => t.completed).length;
     setTodos((prev) => prev.filter((t) => !t.completed));
+    showToast(`${count} completed task${count !== 1 ? "s" : ""} cleared`, "warning");
   }
 
   const isEmpty = todos.length === 0;
 
+  // Calculate completion percentage for the progress indicator
+  const completionPercent =
+    counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
+
   return (
     <div className="App">
+      {/* Toast notification overlay */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
       <div className="page">
         <header className="header">
           <div className="brand">
-            <div className="brandMark" aria-hidden="true" />
+            <div className="brandMark" aria-hidden="true">
+              <span className="brandIcon">✓</span>
+            </div>
             <div>
               <h1 className="title">Todos</h1>
               <p className="subtitle">A lightweight, local-first task list.</p>
@@ -198,11 +277,24 @@ function App() {
             </div>
             <div className="stat">
               <div className="statLabel">Active</div>
-              <div className="statValue">{counts.active}</div>
+              <div className="statValue statValueActive">{counts.active}</div>
             </div>
-            <div className="stat">
+            <div className="stat statHighlight">
               <div className="statLabel">Done</div>
-              <div className="statValue">{counts.completed}</div>
+              <div className="statValue statValueDone">{counts.completed}</div>
+              {counts.total > 0 && (
+                <div className="statProgress">
+                  <div
+                    className="statProgressBar"
+                    style={{ width: `${completionPercent}%` }}
+                    role="progressbar"
+                    aria-valuenow={completionPercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${completionPercent}% complete`}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -212,17 +304,20 @@ function App() {
             <label className="srOnly" htmlFor="new-todo">
               Add a todo
             </label>
-            <input
-              id="new-todo"
-              ref={newInputRef}
-              className="input"
-              value={newText}
-              onChange={(e) => setNewText(e.target.value)}
-              placeholder="Add a task…"
-              autoComplete="off"
-            />
+            <div className="inputWrapper">
+              <span className="inputIcon" aria-hidden="true">+</span>
+              <input
+                id="new-todo"
+                ref={newInputRef}
+                className="input inputWithIcon"
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                placeholder="What needs to be done?"
+                autoComplete="off"
+              />
+            </div>
             <button className="btn btnPrimary" type="submit">
-              Add
+              <span className="btnLabel">Add</span>
             </button>
           </form>
 
@@ -271,9 +366,18 @@ function App() {
 
           {isEmpty ? (
             <div className="emptyState" role="status">
+              <div className="emptyIcon" aria-hidden="true">📝</div>
               <div className="emptyTitle">No todos yet</div>
               <div className="emptyText">
                 Add your first task above to get started.
+              </div>
+            </div>
+          ) : filteredTodos.length === 0 ? (
+            <div className="emptyState" role="status">
+              <div className="emptyIcon" aria-hidden="true">🔍</div>
+              <div className="emptyTitle">No {filter} tasks</div>
+              <div className="emptyText">
+                Try a different filter to see your tasks.
               </div>
             </div>
           ) : (
@@ -338,6 +442,8 @@ function App() {
                             <div className="text">{todo.text}</div>
                             <div className="meta">
                               {todo.completed ? "Completed" : "Active"}
+                              {" · "}
+                              {formatRelativeTime(todo.createdAt)}
                             </div>
                           </div>
                         )}
@@ -348,18 +454,18 @@ function App() {
                       <div className="actions">
                         <button
                           type="button"
-                          className="btn btnGhost"
+                          className="btn btnGhost btnSmall"
                           onClick={() => startEditing(todo)}
                         >
-                          Edit
+                          ✎ Edit
                         </button>
                         <button
                           type="button"
-                          className="btn btnDanger"
+                          className="btn btnDanger btnSmall"
                           onClick={() => deleteTodo(todo.id)}
                           aria-label={`Delete "${todo.text}"`}
                         >
-                          Delete
+                          ✕ Delete
                         </button>
                       </div>
                     )}

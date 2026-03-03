@@ -2,6 +2,7 @@
   --primary: #3b82f6;
   --success: #06b6d4;
   --danger: #ef4444;
+  --warning: #f59e0b;
 
   --bg: #f9fafb;
   --surface: #ffffff;
@@ -13,12 +14,15 @@
   --ring: 0 0 0 4px rgba(59, 130, 246, 0.18);
 
   --radius: 16px;
+  --transition-fast: 140ms ease;
+  --transition-smooth: 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* ===== App Shell ===== */
 .App {
   min-height: 100vh;
   background: radial-gradient(
@@ -35,6 +39,7 @@
   color: var(--text);
 }
 
+/* ===== Page Layout ===== */
 .page {
   max-width: 980px;
   margin: 0 auto;
@@ -42,8 +47,21 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  animation: pageIn 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes pageIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Header ===== */
 .header {
   display: flex;
   gap: 16px;
@@ -64,6 +82,15 @@
   border-radius: 14px;
   background: linear-gradient(135deg, var(--primary), var(--success));
   box-shadow: 0 12px 28px rgba(59, 130, 246, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandIcon {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
 }
 
 .title {
@@ -78,6 +105,7 @@
   font-size: 14px;
 }
 
+/* ===== Stats ===== */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(84px, 1fr));
@@ -91,6 +119,17 @@
   border-radius: 14px;
   padding: 10px 12px;
   backdrop-filter: blur(10px);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stat:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.06);
+}
+
+.statHighlight {
+  background: rgba(6, 182, 212, 0.06);
+  border-color: rgba(6, 182, 212, 0.18);
 }
 
 .statLabel {
@@ -104,6 +143,31 @@
   font-size: 18px;
 }
 
+.statValueActive {
+  color: var(--primary);
+}
+
+.statValueDone {
+  color: var(--success);
+}
+
+/* Completion progress bar inside Done stat */
+.statProgress {
+  margin-top: 6px;
+  height: 4px;
+  background: rgba(6, 182, 212, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.statProgressBar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), var(--primary));
+  border-radius: 4px;
+  transition: width 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== Card ===== */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -112,11 +176,34 @@
   padding: 16px;
 }
 
+/* ===== Add Row ===== */
 .addRow {
   display: flex;
   gap: 10px;
   align-items: center;
   margin-bottom: 14px;
+}
+
+/* Input with icon wrapper */
+.inputWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.inputWrapper:focus-within .inputIcon {
+  color: var(--primary);
 }
 
 .input {
@@ -129,8 +216,8 @@
   outline: none;
   background: #fff;
   color: var(--text);
-  transition: box-shadow 140ms ease, border-color 140ms ease,
-    transform 140ms ease;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .input:focus {
@@ -138,11 +225,16 @@
   box-shadow: var(--ring);
 }
 
+.inputWithIcon {
+  padding-left: 40px;
+}
+
 .inputCompact {
   height: 40px;
   border-radius: 12px;
 }
 
+/* ===== Toolbar ===== */
 .toolbar {
   display: flex;
   align-items: center;
@@ -169,8 +261,8 @@
   border-radius: 999px;
   font-size: 13px;
   cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease, color 140ms ease,
-    background 140ms ease;
+  transition: transform var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), background var(--transition-fast);
 }
 
 .chip:hover {
@@ -183,6 +275,7 @@
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.35);
   color: var(--text);
+  font-weight: 600;
 }
 
 .toolbarRight {
@@ -196,6 +289,7 @@
   color: var(--muted);
 }
 
+/* ===== Buttons ===== */
 .btn {
   height: 40px;
   padding: 0 14px;
@@ -204,10 +298,14 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
-  transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease,
-    background 140ms ease, border-color 140ms ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    opacity var(--transition-fast), background var(--transition-fast),
+    border-color var(--transition-fast);
   user-select: none;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .btn:disabled {
@@ -219,8 +317,12 @@
   transform: translateY(-1px);
 }
 
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .btnPrimary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #2563eb);
   color: #fff;
   box-shadow: 0 12px 24px rgba(59, 130, 246, 0.22);
 }
@@ -230,7 +332,7 @@
 }
 
 .btnSuccess {
-  background: var(--success);
+  background: linear-gradient(135deg, var(--success), #0891b2);
   color: #fff;
   box-shadow: 0 12px 24px rgba(6, 182, 212, 0.22);
 }
@@ -241,12 +343,32 @@
   border-color: rgba(17, 24, 39, 0.14);
 }
 
+.btnGhost:hover:not(:disabled) {
+  background: rgba(17, 24, 39, 0.04);
+}
+
 .btnDanger {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
   color: #b91c1c;
 }
 
+.btnDanger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.btnSmall {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.btnLabel {
+  font-size: 13px;
+}
+
+/* ===== Todo List ===== */
 .list {
   list-style: none;
   padding: 0;
@@ -256,6 +378,7 @@
   gap: 10px;
 }
 
+/* Item entrance animation */
 .item {
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 14px;
@@ -265,6 +388,25 @@
   align-items: center;
   justify-content: space-between;
   background: linear-gradient(180deg, #fff, rgba(249, 250, 251, 0.6));
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    border-color var(--transition-fast), opacity var(--transition-smooth);
+  animation: itemIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes itemIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.item:hover {
+  border-color: rgba(59, 130, 246, 0.18);
+  box-shadow: 0 4px 16px rgba(17, 24, 39, 0.06);
 }
 
 .left {
@@ -293,6 +435,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color var(--transition-fast);
 }
 
 .meta {
@@ -300,9 +443,14 @@
   color: var(--muted);
 }
 
+.itemDone {
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.03), rgba(249, 250, 251, 0.4));
+  border-color: rgba(6, 182, 212, 0.14);
+}
+
 .itemDone .text {
   text-decoration: line-through;
-  color: rgba(17, 24, 39, 0.55);
+  color: rgba(17, 24, 39, 0.45);
   font-weight: 600;
 }
 
@@ -313,6 +461,7 @@
   justify-content: flex-end;
 }
 
+/* ===== Checkbox ===== */
 .check {
   width: 34px;
   height: 34px;
@@ -323,8 +472,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease,
-    border-color 140ms ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    background var(--transition-fast), border-color var(--transition-fast);
   flex: 0 0 auto;
 }
 
@@ -342,11 +491,13 @@
 .checkIcon {
   font-weight: 900;
   font-size: 14px;
-  color: rgba(17, 24, 39, 0.55);
+  color: rgba(17, 24, 39, 0.2);
+  transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
 .checkOn .checkIcon {
   color: rgba(6, 182, 212, 0.95);
+  transform: scale(1.1);
 }
 
 .editForm {
@@ -356,9 +507,15 @@
   flex-wrap: wrap;
 }
 
+/* ===== Empty State ===== */
 .emptyState {
-  padding: 26px 12px 18px;
+  padding: 36px 12px 28px;
   text-align: center;
+}
+
+.emptyIcon {
+  font-size: 36px;
+  margin-bottom: 10px;
 }
 
 .emptyTitle {
@@ -373,6 +530,7 @@
   color: var(--muted);
 }
 
+/* ===== Footer ===== */
 .footer {
   display: flex;
   justify-content: center;
@@ -384,7 +542,7 @@
   font-size: 12px;
 }
 
-/* Accessibility helpers */
+/* ===== Accessibility helpers ===== */
 .srOnly {
   position: absolute;
   width: 1px;
@@ -397,7 +555,7 @@
   border: 0;
 }
 
-/* Responsive adjustments */
+/* ===== Responsive adjustments ===== */
 @media (max-width: 640px) {
   .page {
     padding-top: 22px;
@@ -416,8 +574,13 @@
     align-items: stretch;
   }
 
+  .inputWrapper {
+    width: 100%;
+  }
+
   .btnPrimary {
     width: 100%;
+    justify-content: center;
   }
 
   .item {
